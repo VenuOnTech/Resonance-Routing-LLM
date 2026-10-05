@@ -1,0 +1,30 @@
+# Python Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+
+# PyTorch & Machine Learning Model Weights
+*.pt
+*.pth
+*.ckpt
+*.bin
+*.safetensors
+*.h5
+lightning_logs/
+wandb/
+
+# Datasets (Keep the folder structure, ignore the files)
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# IDEs & OS Files
+.vscode/
+.idea/
+.ipynb_checkpoints/
+.DS_Store
