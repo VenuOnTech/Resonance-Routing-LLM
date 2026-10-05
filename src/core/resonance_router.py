@@ -1,9 +1,12 @@
-import torch, torch.nn as nn
+import torch
+import torch.nn as nn
 
 class ResonanceRouter(nn.Module):
     def __init__(self, eps=1e-4):
         super().__init__()
-        self.eps, self.means, self.inv_covs = eps, nn.ParameterDict(), nn.ParameterDict()
+        self.eps = eps
+        self.means = nn.ParameterDict()
+        self.inv_covs = nn.ParameterDict()
         
     @torch.no_grad()
     def calibrate(self, tid, acts):
@@ -14,5 +17,12 @@ class ResonanceRouter(nn.Module):
         
     def forward(self, x):
         keys = list(self.means.keys())
+        # Calculate Mahalanobis distance for each saved blueprint
         ds = [torch.sqrt(torch.sum((x-self.means[k])@self.inv_covs[k]*(x-self.means[k]), 1).clamp(min=1e-6)).unsqueeze(1) for k in keys]
-        return [keys[i] for i in torch.argmin(torch.cat(ds, 1), 1)]
+        
+        # Concatenate all distances and find the lowest score (highest resonance)
+        all_distances = torch.cat(ds, 1)
+        winning_tasks = [keys[i] for i in torch.argmin(all_distances, 1)]
+        
+        # Now it correctly returns BOTH the tasks and the distance metrics
+        return winning_tasks, all_distances
