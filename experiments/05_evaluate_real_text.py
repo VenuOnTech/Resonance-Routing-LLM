@@ -10,8 +10,9 @@ python_acts = torch.load("data/processed/python_acts.pt")
 medical_acts = torch.load("data/processed/medical_acts.pt")
 
 print("Calibrating router with real HuggingFace activations...")
-router.calibrate("Python_LoRA", python_acts)
-router.calibrate("Medical_LoRA", medical_acts)
+# Force 32-bit float calibration
+router.calibrate("Python_LoRA", python_acts.float())
+router.calibrate("Medical_LoRA", medical_acts.float())
 
 # 2. Initialize TinyLlama
 print("Loading TinyLlama for inference...")
@@ -34,7 +35,8 @@ for prompt in test_prompts:
     with torch.no_grad():
         model(**inputs)
         
-    act = hook.activation
+    # Cast the live 16-bit activation up to 32-bit before routing
+    act = hook.activation.float()
     tasks, distances = router(act)
     
     print(f"\nPrompt: '{prompt}'")
