@@ -12,7 +12,7 @@ model = AutoModelForCausalLM.from_pretrained(model_id)
 hook = LayerHook(model.model.layers[2])
 
 # Reduced to 50 samples for a fast CPU run
-def extract_structural_fingerprints(dataset_name, text_column, n_samples=50):
+def extract_structural_fingerprints(dataset_name, text_column, n_samples=500):
     print(f"\nStreaming {n_samples} samples from {dataset_name}...")
     data = load_dataset(dataset_name, split="train", streaming=True)
     
