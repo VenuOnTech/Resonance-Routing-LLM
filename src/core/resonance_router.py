@@ -11,9 +11,11 @@ class ResonanceRouter(nn.Module):
     @torch.no_grad()
     def calibrate(self, tid, acts):
         mu = acts.mean(0)
-        cov = torch.cov(acts.T) + (self.eps * torch.eye(acts.size(1), device=acts.device))
+        # Removed the artificial eps * eye hack. 
+        cov = torch.cov(acts.T)
         self.means[tid] = nn.Parameter(mu, requires_grad=False)
-        self.inv_covs[tid] = nn.Parameter(torch.linalg.inv(cov), requires_grad=False)
+        # Swapped inv() for pinv() to mathematically handle N < D scenarios safely
+        self.inv_covs[tid] = nn.Parameter(torch.linalg.pinv(cov), requires_grad=False)
         
     def forward(self, x):
         keys = list(self.means.keys())
