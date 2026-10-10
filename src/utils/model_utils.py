@@ -10,14 +10,23 @@ def get_dynamic_routing_layer(model: nn.Module, depth_pct: float = 0.10) -> nn.M
         total_layers = model.config.num_hidden_layers
     except AttributeError:
         # Fallback for models that use different config naming (e.g., older GPT models)
-        total_layers = getattr(model.config, 'n_layer', 22)
+        total_layers = getattr(model.config, 'n_layer', 12)
         
     target_layer_idx = max(1, int(total_layers * depth_pct))
     
-    # HuggingFace standardizes causal LMs under the 'model.layers' attribute
-    try:
-        target_layer = model.get_submodule(f"model.layers.{target_layer_idx}")
-        print(f"[*] Dynamically attached to Layer {target_layer_idx} (Total: {total_layers})")
-        return target_layer
-    except AttributeError:
-        raise ValueError(f"Could not automatically find layer structure for {model.config.model_type}")
+    # Try common HuggingFace architecture layer paths
+    possible_paths = [
+        f"model.layers.{target_layer_idx}",      # Modern: LLaMA, Mistral, TinyLlama, Qwen
+        f"transformer.h.{target_layer_idx}",     # Legacy: GPT-2, GPT-Neo, DialoGPT
+        f"transformer.layers.{target_layer_idx}" # Alternative standard
+    ]
+    
+    for path in possible_paths:
+        try:
+            target_layer = model.get_submodule(path)
+            print(f"[*] Dynamically attached to {path} (Depth: {target_layer_idx}/{total_layers})")
+            return target_layer
+        except AttributeError:
+            continue
+            
+    raise ValueError(f"Could not automatically find layer structure for {model.config.model_type}")
