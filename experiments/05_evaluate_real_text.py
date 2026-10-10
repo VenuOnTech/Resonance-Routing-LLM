@@ -6,8 +6,8 @@ from src.core.activation_hooks import LayerHook
 
 # 1. Load the Router and Calibrate with Real Data
 router = ResonanceRouter()
-python_acts = torch.load("data/processed/python_acts.pt")
-medical_acts = torch.load("data/processed/medical_acts.pt")
+python_acts = torch.load("data/processed/python_acts.pt", weights_only=True)
+medical_acts = torch.load("data/processed/medical_acts.pt", weights_only=True)
 
 print("Calibrating router with real HuggingFace activations...")
 # Force 32-bit float calibration
