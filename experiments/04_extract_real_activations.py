@@ -3,21 +3,30 @@ from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForCausalLM
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.core.activation_hooks import LayerHook
+from src.utils.model_utils import get_dynamic_routing_layer
 
-print("Loading TinyLlama...")
-model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
+# You can now change this to any causal LLM (e.g., "meta-llama/Meta-Llama-3-8B")
+model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0" 
+print(f"Loading {model_id}...")
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForCausalLM.from_pretrained(model_id)
 
-hook = LayerHook(model.model.layers[2])
+# Dynamically attach to the correct layer
+target_layer = get_dynamic_routing_layer(model)
+hook = LayerHook(target_layer)
 
-# Reduced to 50 samples for a fast CPU run
+D = model.config.hidden_size
+print(f"[*] Model Hidden Dimension: {D}")
+
 def extract_structural_fingerprints(dataset_name, text_column, n_samples=2000):
     print(f"\nStreaming {n_samples} samples from {dataset_name}...")
     data = load_dataset(dataset_name, split="train", streaming=True)
     
     activations = []
     count = 0
+    if n_samples < D:
+        print(f"WARNING: You requested {n_samples} samples, but the model dimension is {D}.")
+        print("Using pseudo-inverse approximation. For full-rank precision, increase n_samples.")
     for row in data:
         if count >= n_samples: break
         
