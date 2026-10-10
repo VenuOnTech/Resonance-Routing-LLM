@@ -15,11 +15,16 @@ router.calibrate("Python_LoRA", python_acts.float())
 router.calibrate("Medical_LoRA", medical_acts.float())
 
 # 2. Initialize TinyLlama
-print("Loading TinyLlama for inference...")
+from src.utils.model_utils import get_dynamic_routing_layer
+
+print("Loading model for inference...")
 model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 model = AutoModelForCausalLM.from_pretrained(model_id)
-hook = LayerHook(model.model.layers[2])
+
+# Dynamically attach for inference
+target_layer = get_dynamic_routing_layer(model)
+hook = LayerHook(target_layer)
 
 # 3. The Ambiguous Prompt Test
 test_prompts = [
